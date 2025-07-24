@@ -11,7 +11,7 @@ class Settings:
     
     # Model Configuration
     MODEL_API_KEY: str = os.getenv("MODEL_API_KEY", "")
-    MODEL_NAME: str = os.getenv("MODEL_NAME", "google/gemini-2.5-flash-preview-05-20")
+    MODEL_NAME: str = os.getenv("MODEL_NAME", "gpt-4o")
     
     # Stagehand Configuration
     STAGEHAND_API_URL: str = os.getenv("STAGEHAND_API_URL", "")
