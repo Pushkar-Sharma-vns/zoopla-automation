@@ -207,9 +207,9 @@ class ZooplaFlowTester:
 
         # Run tests in sequence
         tests = [
-            # ("Environment Setup", self.test_environment_setup),
-            # ("Browserbase Connection", self.test_browserbase_connection),
-            # ("Screenshot Functionality", self.test_screenshot_functionality),
+            ("Environment Setup", self.test_environment_setup),
+            ("Browserbase Connection", self.test_browserbase_connection),
+            ("Screenshot Functionality", self.test_screenshot_functionality),
             ("Zoopla Navigation", self.test_zoopla_navigation),
             # ("Complete Flow", self.test_complete_flow)
         ]
