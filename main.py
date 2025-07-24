@@ -87,8 +87,8 @@ async def run_zoopla_automation(city_name: str):
             logger.info(" Step 1 completed - Successfully reached Zoopla")
             
             # Step 2: Search for city
-            logger.info(f"=
- Step 2: Searching for '{city_name}'...")
+            logger.info(f'''=
+ Step 2: Searching for '{city_name}'...''')
             
             # Step 2a: Type in search box
             type_instruction = f"Type '{city_name}' in the location search box"
@@ -161,13 +161,17 @@ async def run_zoopla_automation(city_name: str):
                 await client.act(scroll_instruction)
                 await asyncio.sleep(2)
                 
-                scroll_screenshot = await client.wait_and_screenshot(
+                # Use safe screenshot method for scroll operations
+                scroll_screenshot = await client.safe_screenshot(
                     session_dir,
                     wait_time=1.0,
                     prefix=f"04_scroll_{i+1:02d}"
                 )
-                screenshot_manager.add_screenshot(scroll_screenshot, f"Scroll {i+1}")
-                results['screenshots'].append(scroll_screenshot)
+                if scroll_screenshot:
+                    screenshot_manager.add_screenshot(scroll_screenshot, f"Scroll {i+1}")
+                    results['screenshots'].append(scroll_screenshot)
+                else:
+                    logger.warning(f"Scroll screenshot {i+1} failed - continuing without it")
             
             results['steps_completed'].append("Scroll through properties")
             logger.info(" Step 4 completed - Property scrolling done")
@@ -186,13 +190,16 @@ async def run_zoopla_automation(city_name: str):
                 results['property_url'] = property_url
                 
                 # Screenshot selected property
-                property_screenshot = await client.wait_and_screenshot(
+                property_screenshot = await client.safe_screenshot(
                     session_dir,
                     wait_time=3.0,
                     prefix="05_selected_property"
                 )
-                screenshot_manager.add_screenshot(property_screenshot, "Selected Property")
-                results['screenshots'].append(property_screenshot)
+                if property_screenshot:
+                    screenshot_manager.add_screenshot(property_screenshot, "Selected Property")
+                    results['screenshots'].append(property_screenshot)
+                else:
+                    logger.warning(f"Property screenshot failed - continuing without it")
                 results['steps_completed'].append("Select property")
                 
                 logger.info(f" Step 5 completed - Property selected: {property_url}")
@@ -282,7 +289,7 @@ def print_results_summary(results: dict):
     if remaining_steps:
         print(f"\n�  Incomplete Steps:")
         for step in remaining_steps:
-            print(f"   " {step}")
+            print(f"  {step}")
     
     if results.get('error'):
         print(f"\nL Error: {results['error']}")

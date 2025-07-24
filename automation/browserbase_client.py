@@ -429,7 +429,7 @@ class BrowserbaseClient:
             raise
             
     async def take_screenshot(self, file_path: str, full_page: bool = False) -> str:
-        """Take a screenshot of the current page"""
+        """Take a screenshot of the current page with timeout handling"""
         if not self.stagehand:
             raise RuntimeError("Stagehand client not initialized")
             
@@ -437,18 +437,40 @@ class BrowserbaseClient:
             # Ensure directory exists
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             
-            # Take screenshot with consistent settings
-            await self.stagehand.page.screenshot(
-                path=file_path, 
-                full_page=full_page
-            )
+            # Take screenshot with reduced timeout and fallback options
+            try:
+                await self.stagehand.page.screenshot(
+                    path=file_path, 
+                    full_page=full_page,
+                    timeout=15000  # Reduced from default 30s to 15s
+                )
+            except Exception as screenshot_error:
+                logger.warning(f"Screenshot with full options failed: {screenshot_error}")
+                
+                # Fallback: Try screenshot without full_page option
+                try:
+                    await self.stagehand.page.screenshot(
+                        path=file_path,
+                        timeout=10000  # Even shorter timeout for fallback
+                    )
+                    logger.info("Fallback screenshot (viewport only) succeeded")
+                except Exception as fallback_error:
+                    logger.warning(f"Fallback screenshot failed: {fallback_error}")
+                    
+                    # Final fallback: Try with minimal options
+                    await self.stagehand.page.screenshot(
+                        path=file_path,
+                        timeout=5000,
+                        clip={"x": 0, "y": 0, "width": 1280, "height": 720}  # Fixed viewport clip
+                    )
+                    logger.info("Minimal screenshot succeeded")
             
             self.screenshot_counter += 1
             logger.info(f"Screenshot {self.screenshot_counter} saved to: {file_path}")
             return file_path
             
         except Exception as e:
-            logger.error(f"Failed to take screenshot: {e}")
+            logger.error(f"All screenshot attempts failed: {e}")
             raise
             
     async def take_timestamped_screenshot(self, directory: str, prefix: str = "screenshot") -> str:
@@ -464,11 +486,19 @@ class BrowserbaseClient:
         await smart_delay(wait_time, wait_time + 1.0)
         
         try:
-            await self.stagehand.page.wait_for_load_state("networkidle", timeout=10000)
+            await self.stagehand.page.wait_for_load_state("networkidle", timeout=5000)  # Reduced timeout
         except Exception as e:
             logger.warning(f"NetworkIdle timeout, proceeding anyway: {e}")
             
         return await self.take_timestamped_screenshot(directory, prefix)
+    
+    async def safe_screenshot(self, directory: str, wait_time: float = 1.0, prefix: str = "step") -> Optional[str]:
+        """Safe screenshot that returns None on failure instead of raising exception"""
+        try:
+            return await self.wait_and_screenshot(directory, wait_time, prefix)
+        except Exception as e:
+            logger.warning(f"Safe screenshot failed for {prefix}: {e}")
+            return None
             
     async def get_current_url(self) -> str:
         """Get current page URL"""
