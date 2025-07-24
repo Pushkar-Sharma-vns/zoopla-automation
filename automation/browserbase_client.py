@@ -380,7 +380,8 @@ class BrowserbaseClient:
             raise RuntimeError("Stagehand client not initialized")
             
         try:
-            result = await self.stagehand.act(instruction)
+            # Use the correct API - act method is on the page object
+            result = await self.stagehand.page.act(instruction)
             logger.info(f"Action completed: {instruction}")
             return result
         except Exception as e:
@@ -398,10 +399,11 @@ class BrowserbaseClient:
             raise RuntimeError("Stagehand client not initialized")
             
         try:
+            # Use the correct API - extract method is on the page object
             if schema:
-                result = await self.stagehand.extract(instruction, schema=schema)
+                result = await self.stagehand.page.extract(instruction, schema=schema)
             else:
-                result = await self.stagehand.extract(instruction)
+                result = await self.stagehand.page.extract(instruction)
             logger.info(f"Data extracted successfully: {instruction}")
             return result
         except Exception as e:

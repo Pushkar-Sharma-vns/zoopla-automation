@@ -168,6 +168,6 @@ async def respectful_backoff(attempt: int) -> None:
     """Backoff on errors"""
     await security_manager.respectful_backoff(attempt)
 
-async def handle_blocking_scenario(page_content: str) -> bool:
-    """Handle blocking scenarios"""
-    return await security_manager.handle_blocking_scenario(page_content)
+async def handle_blocking_scenario(page_content: str, page_title: str = "") -> bool:
+    """Handle blocking scenarios with improved detection"""
+    return await security_manager.handle_blocking_scenario(page_content, page_title)
