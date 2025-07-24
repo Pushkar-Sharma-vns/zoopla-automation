@@ -65,7 +65,8 @@ class ZooplaNavigator:
             
             # Check for blocking scenarios
             page_content = await self.client.stagehand.page.content()
-            if await handle_blocking_scenario(page_content):
+            page_title = await self.client.stagehand.page.title()
+            if await handle_blocking_scenario(page_content, page_title):
                 logger.warning("🚨 Blocking detected during city search")
                 raise Exception("Blocking scenario detected during search")
             
@@ -181,7 +182,8 @@ class ZooplaNavigator:
             
             # Check for blocking scenarios
             page_content = await self.client.stagehand.page.content()
-            if await handle_blocking_scenario(page_content):
+            page_title = await self.client.stagehand.page.title()
+            if await handle_blocking_scenario(page_content, page_title):
                 logger.warning("🚨 Blocking detected during property selection")
                 raise Exception("Blocking scenario detected during property selection")
             

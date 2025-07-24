@@ -64,19 +64,50 @@ class SecurityManager:
         logger.warning(f"Respectful backoff (attempt {attempt}): {delay:.1f} seconds")
         await asyncio.sleep(delay)
         
-    async def handle_blocking_scenario(self, page_content: str) -> bool:
-        """Handle common blocking scenarios"""
-        blocking_indicators = [
-            "blocked", "captcha", "verify you are human", 
-            "access denied", "rate limit", "too many requests",
-            "suspicious activity", "robot", "bot detection"
+    async def handle_blocking_scenario(self, page_content: str, page_title: str = "") -> bool:
+        """Handle common blocking scenarios with improved detection"""
+        
+        # Skip blocking detection if we have a successful Zoopla page title
+        if page_title and ("zoopla" in page_title.lower() and 
+                          any(keyword in page_title.lower() for keyword in ["property", "search", "buy", "rent", "house"])):
+            logger.debug("✅ Valid Zoopla page detected - skipping blocking check")
+            return False
+        
+        # More specific blocking indicators (avoiding false positives)
+        critical_blocking_indicators = [
+            "access denied", "blocked", "captcha required", 
+            "verify you are human", "rate limit exceeded", 
+            "too many requests", "suspicious activity detected",
+            "bot detection enabled", "automated requests blocked"
         ]
         
+        # Check for actual blocking page indicators (more specific)
         content_lower = page_content.lower()
-        is_blocked = any(indicator in content_lower for indicator in blocking_indicators)
+        
+        # Look for specific blocking patterns rather than general words
+        blocking_patterns = [
+            "you have been blocked",
+            "access to this page has been denied", 
+            "please complete the captcha",
+            "rate limit has been exceeded",
+            "too many requests from your ip",
+            "automated requests are not allowed"
+        ]
+        
+        # Check both individual indicators and specific patterns
+        is_blocked = (
+            any(indicator in content_lower for indicator in critical_blocking_indicators) or
+            any(pattern in content_lower for pattern in blocking_patterns)
+        )
+        
+        # Additional check: if page is very short, might be a blocking page
+        if len(page_content.strip()) < 200 and any(word in content_lower for word in ["blocked", "denied", "captcha"]):
+            is_blocked = True
         
         if is_blocked:
-            logger.warning("🚨 Blocking scenario detected! Implementing recovery strategy...")
+            logger.warning("🚨 Actual blocking scenario detected! Implementing recovery strategy...")
+            logger.warning(f"Page title: '{page_title}'")
+            logger.warning(f"Content length: {len(page_content)} chars")
             
             # Long delay before retry
             recovery_delay = random.uniform(30, 60)

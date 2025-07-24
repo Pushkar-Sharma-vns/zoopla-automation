@@ -352,9 +352,10 @@ class BrowserbaseClient:
                     await smart_delay(2.0, 4.0)  # Let page settle
                     await self.stagehand.page.wait_for_load_state("networkidle", timeout=30000)
                 
-                # Check for blocking scenarios
+                # Check for blocking scenarios (with page title context)
                 page_content = await self.stagehand.page.content()
-                if await handle_blocking_scenario(page_content):
+                page_title = await self.stagehand.page.title()
+                if await handle_blocking_scenario(page_content, page_title):
                     logger.warning(f"Blocking detected during navigation to {url}, retrying...")
                     continue
                 
